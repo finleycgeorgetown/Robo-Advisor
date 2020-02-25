@@ -14,42 +14,53 @@ datelabel = now.strftime("%d/%m/%Y %H:%M:%S")
 
 load_dotenv()
 
+# utility function to convert float or integer to usd-formatted string (for printing
+# ... adapted from: Professor Rossetti project walkthrough https://www.youtube.com/watch?v=UXAVOP1oCog&t=847s
 def to_usd(my_price):
     return "${0:,.2f}".format(my_price)
 
 
-#
-#INFO INPUTS
-#
-
 api_key = os.environ.get("ALPHAVANTAGE_API_KEY")
 
-stock = str(input("Which stock do you wish to check? "))
-stock_upper = stock.upper()
-if len(stock_upper) >=1 or 5 >= len(stock_upper):
-    symbol = stock_upper
-elif len(stock_upper) > 5:
-    print("please enter a valid stock")
-    quit()
-else:
-    quit()
+#stock = str(input("Which stock do you wish to check? "))
+#stock_upper = stock.upper()
+symbol = ""
+while True:
+    try:
+        stock = str(input("Which stock do you wish to check? "))
+        stock_upper = stock.upper()    
+        symbol = stock_upper
+    except KeyError:
+        print("Please enter a valid stock symbol.")
+        continue
+    if len(symbol) >= 6:
+        print("Please enter a valid stock symbol.")
+        continue
+    else:
+        break
+
+
+
+ #if len(stock_upper) >=1 or 5 >= len(stock_upper):
+    #    symbol = stock_upper
+   # elif len(stock_upper) > 5:
+    #    print("please enter a valid stock")
+    #    quit()
+    #else:
+    #    quit()
 
 
 request_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}"
 response = requests.get(request_url)
 
-#print(type(response)) #> <class 'requests.models.Response'>
-#print(response.status_code) #> 200
-#print(response.text) 
-
 parsed_response = json.loads(response.text)
 
 last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
-#breakpoint()
+
 
 tsd = parsed_response["Time Series (Daily)"]
 
-dates = list(tsd.keys()) # TODO: sort to ensure latest day is 1st
+dates = list(tsd.keys()) 
 latest_day = dates[0]
 
 latest_close = tsd[latest_day]["4. close"]
@@ -66,11 +77,6 @@ for date in dates:
 
 recent_high = max(high_prices)
 recent_low = min(low_prices)
-#breakpoint()
-
-#
-#INFO OUTPUTS
-#
 
 
 csv_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "prices.csv")
@@ -95,10 +101,10 @@ stock_decision = ""
 decision_reason = ""
 if float(latest_close) < (1.2 * float(recent_low)):
     stock_decision = "Buy!"
-    decision_reason = "The latest closing price is within 20 percent of the recent low"
+    decision_reason = "The latest closing price is within 20 percent of the recent low."
 else:
     stock_decision = "Don't Buy."
-    decision_reason = "The latest closing price is not within 20 percent of the recent low"
+    decision_reason = "The latest closing price is not within 20 percent of the recent low."
 
 print("-------------------------")
 print(f"SELECTED SYMBOL: {symbol}")
